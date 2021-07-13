@@ -1,5 +1,6 @@
 from flask import Response
 from rubix_http.request import gw_request
+from sqlalchemy import desc, asc, or_
 from sqlalchemy.orm import validates
 
 from src import db
@@ -33,6 +34,22 @@ class BPGPointMapping(ModelBase):
         if not value:
             raise ValueError('bacnet_point_name should not be null or blank')
         return value
+
+    @classmethod
+    def find_by_pagination(cls, page: int, per_page: int, sort: str, sort_by: str, search: str):
+        query = cls.query
+        if search:
+            condition = or_(*[cls.bacnet_point_name.ilike(f'%{search}%'), cls.generic_point_name.ilike(f'%{search}%')])
+            query = query.filter(condition)
+        if sort or sort_by:
+            if not sort_by:
+                sort_by = cls.__table__.primary_key.columns.keys()[0]
+            else:
+                if sort_by not in cls.__table__.columns.keys():
+                    raise ValueError(f"Does not exist sort_by{sort_by}")
+            sort = desc(sort_by) if sort == "desc" else asc(sort_by)
+            query = query.order_by(sort)
+        return query.paginate(page=page, per_page=per_page or 50, error_out=False)
 
     @classmethod
     def find_by_bacnet_point_uuid(cls, bacnet_point_uuid):

@@ -2,6 +2,17 @@ from collections import OrderedDict
 
 from flask_restful import fields
 
+paginated_fields = {
+    "page": fields.Integer,
+    "per_page": fields.Integer,
+    "pages": fields.Integer,
+    "total": fields.Integer,
+    "has_prev": fields.Boolean,
+    "prev_num": fields.Integer,
+    "has_next": fields.Boolean,
+    "next_num": fields.Integer,
+}
+
 point_store_fields = {
     'present_value': fields.String,
     'ts': fields.String
@@ -48,6 +59,10 @@ point_fields = {
     'point_store': fields.Nested(point_store_fields)
 }
 
+paginated_point_fields = {
+    **paginated_fields,
+    "items": fields.Nested(point_fields),
+}
 server_field = {
     'ip': fields.String,
     'port': fields.Integer,
@@ -64,4 +79,9 @@ mapping_bp_gp_fields = {
     'generic_point_uuid': fields.String,
     'bacnet_point_name': fields.String,
     'generic_point_name': fields.String,
+}
+
+paginated_mapping_bp_gp_fields = {
+    **paginated_fields,
+    "items": fields.Nested(mapping_bp_gp_fields),
 }

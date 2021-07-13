@@ -2,12 +2,13 @@ import shortuuid
 from abc import abstractmethod
 
 from flask_restful import marshal_with, reqparse
+from flask_restful.reqparse import request
 from rubix_http.exceptions.exception import NotFoundException
 from rubix_http.resource import RubixResource
 
 from src.bacnet_server.models.model_mapping import BPGPointMapping
 from src.bacnet_server.models.model_point_store import BACnetPointStoreModel
-from src.bacnet_server.resources.model_fields import mapping_bp_gp_fields
+from src.bacnet_server.resources.model_fields import mapping_bp_gp_fields, paginated_mapping_bp_gp_fields
 
 
 def sync_point_value(mapping: BPGPointMapping):
@@ -18,9 +19,14 @@ def sync_point_value(mapping: BPGPointMapping):
 
 class BPGPMappingResourceList(RubixResource):
     @classmethod
-    @marshal_with(mapping_bp_gp_fields)
+    @marshal_with(paginated_mapping_bp_gp_fields)
     def get(cls):
-        return BPGPointMapping.find_all()
+        page = request.args.get('page', default=None, type=int)
+        per_page = request.args.get('per_page', default=None, type=int)
+        sort = request.args.get('sort', default=None, type=str)
+        sort_by = request.args.get('sort_by', default=None, type=str)
+        search = request.args.get('search', default=None, type=str)
+        return BPGPointMapping.find_by_pagination(page, per_page, sort, sort_by, search)
 
     @classmethod
     @marshal_with(mapping_bp_gp_fields)

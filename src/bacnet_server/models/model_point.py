@@ -1,5 +1,6 @@
 import re
 
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import validates
 
 from src import db
@@ -48,6 +49,23 @@ class BACnetPointModel(db.Model):
         if 'source' in kwargs:
             return cls.query.filter_by(source=kwargs['source']).all()
         return cls.query.all()
+
+    @classmethod
+    def find_by_pagination(cls, source: str, page: int, per_page: int, sort: str, sort_by: str, search: str):
+        query = cls.query
+        if source:
+            query = query.filter_by(source=source)
+        if search:
+            query = query.filter(cls.object_name.ilike(f'%{search}%'))
+        if sort or sort_by:
+            if not sort_by:
+                sort_by = cls.__table__.primary_key.columns.keys()[0]
+            else:
+                if sort_by not in cls.__table__.columns.keys():
+                    raise ValueError(f"Does not exist sort_by {sort_by}")
+            sort = desc(sort_by) if sort == "desc" else asc(sort_by)
+            query = query.order_by(sort)
+        return query.paginate(page=page, per_page=per_page or 50, error_out=False)
 
     @classmethod
     def find_by_uuid(cls, uuid):
